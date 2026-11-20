@@ -1,4 +1,9 @@
-"""ASCII banner and version metadata for the CLI."""
+"""ASCII banner and version metadata for the CLI.
+
+The wordmark is a pre-rendered "AI INJECTOR" in the ``ansi_shadow`` figlet font.
+It is stored as literal art (no runtime dependency on ``pyfiglet``) so the banner
+is identical on every platform and costs nothing to print.
+"""
 
 from __future__ import annotations
 
@@ -7,31 +12,41 @@ from . import __version__
 AUTHOR = "AboBakr Mohamed"
 VERSION = __version__
 
-_BANNER = r"""
- █████╗ ██╗    ███████╗███╗   ██╗     ██╗███╗   ██╗     ██╗███████╗ ██████╗████████╗ ██████╗ ██████╗
-██╔══██╗██║    ██╔════╝████╗  ██║     ██║████╗  ██║     ██║██╔════╝██╔════╝╚══██╔══╝██╔═══██╗██╔══██╗
-███████║██║    █████╗  ██╔██╗ ██║     ██║██╔██╗ ██║     ██║█████╗  ██║        ██║   ██║   ██║██████╔╝
-██╔══██║██║    ██╔══╝  ██║╚██╗██║██   ██║██║╚██╗██║██   ██║██╔══╝  ██║        ██║   ██║   ██║██╔══██╗
-██║  ██║██║    ███████╗██║ ╚████║╚█████╔╝██║ ╚████║╚█████╔╝███████╗╚██████╗   ██║   ╚██████╔╝██║  ██║
-╚═╝  ╚═╝╚═╝    ╚══════╝╚═╝  ╚═══╝ ╚════╝ ╚═╝  ╚═══╝ ╚════╝ ╚══════╝ ╚═════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝
-"""
+#: "AI INJECTOR" — ansi_shadow figlet, 6 lines, max width 78 columns.
+_ART = (
+    " █████╗ ██╗    ██╗███╗   ██╗     ██╗███████╗ ██████╗████████╗ ██████╗ ██████╗\n"
+    "██╔══██╗██║    ██║████╗  ██║     ██║██╔════╝██╔════╝╚══██╔══╝██╔═══██╗██╔══██╗\n"
+    "███████║██║    ██║██╔██╗ ██║     ██║█████╗  ██║        ██║   ██║   ██║██████╔╝\n"
+    "██╔══██║██║    ██║██║╚██╗██║██   ██║██╔══╝  ██║        ██║   ██║   ██║██╔══██╗\n"
+    "██║  ██║██║    ██║██║ ╚████║╚█████╔╝███████╗╚██████╗   ██║   ╚██████╔╝██║  ██║\n"
+    "╚═╝  ╚═╝╚═╝    ╚═╝╚═╝  ╚═══╝ ╚════╝ ╚══════╝ ╚═════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝"
+)
 
-_TAGLINE = "              [ AI INJECTOR ]  —  AI PROMPT INJECTION FRAMEWORK"
+#: Width of the wordmark, used to centre the tagline beneath it.
+_WIDTH = 78
 
-_BOX = """       ┌──────────────────────────────────────────────────────┐
-       │  AI INJECTOR                                         │
-       │  DIRECT INJECTION  |  INDIRECT INJECTION             │
-       │  PAYLOAD ENGINE    |  VULNERABILITY DETECTION        │
-       │  EVIDENCE CAPTURE  |  SECURITY REPORTING             │
-       └──────────────────────────────────────────────────────┘"""
+_TAGLINE_TEXT = "[ AI PROMPT INJECTION FRAMEWORK ]"
+
+_BOX = """┌──────────────────────────────────────────────────────┐
+│  DIRECT INJECTION  |  INDIRECT INJECTION             │
+│  PAYLOAD ENGINE    |  VULNERABILITY DETECTION        │
+│  EVIDENCE CAPTURE  |  SECURITY REPORTING             │
+└──────────────────────────────────────────────────────┘"""
+
+
+def _centre(text: str, width: int = _WIDTH) -> str:
+    pad = max(0, (width - len(text)) // 2)
+    return " " * pad + text
 
 
 def banner(platform: str = "") -> str:
+    """Return the full branded banner."""
     lines = [
-        _BANNER,
-        _TAGLINE,
+        _ART,
         "",
-        _BOX,
+        _centre(_TAGLINE_TEXT),
+        "",
+        *("       " + line for line in _BOX.splitlines()),
         "",
         f"       [!] Developed by : {AUTHOR}",
         f"       [!] Version      : {VERSION}",
