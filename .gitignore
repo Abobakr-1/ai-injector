@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local run artifacts (never commit evidence or targets with secrets)
+runs/
+targets/
+*.local.yaml
+AI_INJECTOR_*.log
+.alphacode/
+
+# Local demo/verification workspaces
+.demo-home/
+.verify/
