@@ -7,12 +7,28 @@
 ╚═╝  ╚═╝╚═╝    ╚═╝╚═╝  ╚═══╝ ╚════╝ ╚══════╝ ╚═════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝
 
                       [ AI PROMPT INJECTION FRAMEWORK ]
+
+       ┌──────────────────────────────────────────────────────┐
+       │  DIRECT INJECTION  |  INDIRECT INJECTION             │
+       │  PAYLOAD ENGINE    |  VULNERABILITY DETECTION        │
+       │  EVIDENCE CAPTURE  |  SECURITY REPORTING             │
+       └──────────────────────────────────────────────────────┘
+
+       [!] Developed by : AboBakr Mohamed
+   _   _         ___       _         __  __     _                      _
+  /_\ | |__  ___| _ ) __ _| |___ _  |  \/  |___| |_  __ _ _ __  ___ __| |
+ / _ \| '_ \/ _ \ _ \/ _` | / / '_| | |\/| / _ \ ' \/ _` | '  \/ -_) _` |
+/_/ \_\_.__/\___/___/\__,_|_\_\_|   |_|  |_\___/_||_\__,_|_|_|_\___\__,_|
+
+       [!] Version      : 1.0.0
+       [!] Platform     : Kali Linux
 ```
 
-# AI Injector
+# AI INJECTOR
 
 **Offensive prompt-injection testing harness for AI agents and chatbots.**
-Developed by **AboBakr Mohamed**.
+
+> **Developed by AboBakr Mohamed**
 
 AI Injector ships exactly **two deeply-developed attack modules** — **direct**
 and **indirect prompt injection** — on top of one reliable testing engine. It is
