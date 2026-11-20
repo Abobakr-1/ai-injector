@@ -103,38 +103,196 @@ Both modules use one engine that enforces validation you cannot accidentally ski
 
 ## Install
 
-**Kali / Ubuntu** (PEP 668 blocks system `pip`, so use `pipx`):
+### Kali Linux / Ubuntu / Debian (recommended path)
+
+`pipx` is the right way here: Kali rolling and modern Debian/Ubuntu block
+system-wide `pip install` with PEP 668 (`externally-managed-environment`), and
+`pipx` gives you an isolated CLI already on `$PATH`.
 
 ```bash
-sudo apt update && sudo apt install -y pipx python3-venv
+# 1. prerequisites
+sudo apt update
+sudo apt install -y python3 python3-venv python3-pip pipx git
+
+# 2. make pipx apps reachable in every shell
 pipx ensurepath
-pipx install git+https://github.com/your-org/ai-injector.git
+# open a NEW terminal (or: source ~/.bashrc) so PATH is updated
+
+# 3. install AI Injector straight from GitHub
+pipx install git+https://github.com/Abobakr-1/ai-injector.git
+
+# 4. verify
+ai-injector --version
+ai-injector doctor
+```
+
+Upgrade later with `pipx upgrade ai-injector`, remove with `pipx uninstall ai-injector`.
+
+> **If `pipx` is unavailable** (older Ubuntu), `sudo apt install pipx` usually
+> fixes it. As a last resort use the venv path below — do **not** use
+> `sudo pip install`, which breaks the system Python on Kali.
+
+### Clone + venv (needed if you want to edit payloads in-repo)
+
+```bash
+git clone https://github.com/Abobakr-1/ai-injector.git
+cd ai-injector
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
 ai-injector --version
 ```
 
-**Clone + venv** (to hack on it):
-
-```bash
-git clone https://github.com/your-org/ai-injector.git
-cd ai-injector
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e .
-```
-
-**Windows:**
+### Windows
 
 ```powershell
+git clone https://github.com/Abobakr-1/ai-injector.git
+cd ai-injector
 py -m venv .venv
 .venv\Scripts\activate
 pip install -e .
+ai-injector --version
 ```
 
-**Docker** (host networking so containers can reach local targets):
+### Docker (isolated; `--network host` so it can reach local targets)
 
 ```bash
-docker build -t ai-injector https://github.com/your-org/ai-injector.git
+git clone https://github.com/Abobakr-1/ai-injector.git
+cd ai-injector
+docker build -t ai-injector .
 docker run --rm -it --network host ai-injector --help
 ```
+
+---
+
+## Using it for bug bounty on AI programs
+
+A practical flow for an authorized AI/LLM program (chatbots, RAG assistants,
+agent endpoints). **Only test assets listed in the program's scope.**
+
+### Step 1 — find and register the AI surface
+
+Recon tells you which endpoints exist; the program policy tells you which you may
+test. Typical AI surfaces to look for on an in-scope host:
+
+| What you see | Likely adapter |
+| --- | --- |
+| `/v1/chat/completions`, `/v1/models` | `openai-chat` |
+| `/api/chat`, `/chat`, `/ask`, custom JSON | `custom-chat` |
+| streaming reply (`text/event-stream`) | `sse-stream` |
+| document upload / knowledge-base ingest | `http` (for indirect plant) |
+
+Check quickly by hand before registering:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://target.example/v1/models
+curl -s https://target.example/v1/models | head -c 400
+```
+
+Register it (autodetect, or force the adapter when you already know the shape):
+
+```bash
+# Autodetect (probes /v1/models then common chat paths)
+ai-injector targets add acme --url https://target.example
+
+# Known custom chat shape
+ai-injector targets add acme --url https://target.example \
+    --adapter custom-chat --path /api/chat --reply-path response --with-identity
+```
+
+Add your bug-bounty test account and any API key via environment variables
+(never in the profile file):
+
+```bash
+export ACME_TOKEN='...'          # your authorized test-account token
+ai-injector targets add acme --url https://target.example \
+    --adapter openai-chat \
+    --header "Authorization: Bearer {{env:ACME_TOKEN}}"
+```
+
+### Step 2 — record authorization
+
+The tool refuses to send anything until the two scope gates pass: the host must
+be in `scope.allow`, **and** the target must be confirmed.
+
+```bash
+# add the host to the allowlist in ~/.config/ai-injector/config.yaml
+# then record why this is authorized (program name, ticket, or ownership)
+ai-injector scope confirm acme --basis "Bugcrowd ACME AI program, IN scope per policy v2026-11"
+ai-injector scope check acme
+```
+
+### Step 3 — profile, then test
+
+```bash
+ai-injector profile acme
+
+# Direct injection: user-controlled input
+ai-injector run acme --module direct --report
+
+# Indirect injection: needs a plant endpoint in the target profile
+ai-injector run acme --module indirect --report
+
+# Focused runs (faster, less noisy)
+ai-injector run acme --module direct --technique system-prompt-extraction --report
+ai-injector run acme --module direct --technique instruction-override --report
+```
+
+### Step 4 — triage findings
+
+```bash
+ai-injector findings                # table for the latest run
+ai-injector show F-001              # request + response + raw evidence
+ai-injector replay F-001            # confirm it still reproduces
+```
+
+**Only `CONFIRMED` findings are reportable.** `INCONCLUSIVE` needs manual review;
+`NEGATIVE` is a tested-and-no-signal result, not a vulnerability; `ERROR` is a
+coverage gap, never a negative.
+
+### Step 5 — write the report
+
+```bash
+ai-injector report --format md > finding.md
+```
+
+Every `CONFIRMED` finding comes with the exact request, the exact response, and
+the matched proof string — enough for a reproducible submission. Before you
+submit, verify against the program's rules:
+
+- the asset is **in scope**,
+- you used an **authorized test account** and no real user data,
+- the demonstrated impact is what the program accepts (system-prompt leak,
+  instruction override, cross-tenant RAG leakage — check each program's policy),
+- rate limits were respected.
+
+### Indirect injection on a real program
+
+Add the plant endpoint to the target profile:
+
+```yaml
+# ~/.config/ai-injector/targets/acme.yaml
+indirect:
+  plant:
+    method: POST
+    path: /api/documents          # your authorized upload/ingest endpoint
+    body:
+      title: "{{title}}"
+      content: "{{prompt}}"
+  trigger_prompt: "Summarize the company policies."
+```
+
+Then `ai-injector run acme --module indirect --report`. The trigger is
+deliberately neutral, so a confirmed hit proves retrieved content changed model
+behavior — the actual RAG vulnerability class.
+
+### Scope discipline
+
+- The allowlist is a hard gate; the tool fails closed on any other host, including
+  redirect targets and subdomains you did not authorize.
+- Do not add hosts you are not authorized to test, and do not remove the guard.
+- Rate-limit yourself: `--technique` and `--payload-id` narrow a run when a
+  program has request limits.
 
 ---
 

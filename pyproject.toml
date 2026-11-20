@@ -31,7 +31,7 @@ dev = ["pytest>=7.0"]
 ai-injector = "ai_injector.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/your-org/ai-injector"
+Homepage = "https://github.com/Abobakr-1/ai-injector"
 
 [tool.setuptools]
 packages = ["ai_injector", "ai_injector.modules"]
